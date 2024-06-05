@@ -1,0 +1,19 @@
+# Define the base registry path for 64-bit and 32-bit applications
+$regPaths = @(
+    'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\',
+    'HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\'
+)
+
+# Search for Java installations and uninstall them silently without rebooting
+foreach ($path in $regPaths) {
+    Get-ChildItem $path |
+    Get-ItemProperty |
+    Where-Object { $_.DisplayName -like "*Java*" -and $_.Publisher -like "Oracle Corporation" } |
+    ForEach-Object {
+        $uninstallString = $_.UninstallString -replace 'msiexec.exe', ''
+        $uninstallString = $uninstallString.Trim()
+        
+        # Run the uninstall command silently without forcing a reboot
+        Start-Process "msiexec.exe" -ArgumentList "/x $uninstallString /quiet /norestart" -Wait
+    }
+}
